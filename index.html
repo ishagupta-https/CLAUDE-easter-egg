@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Terminal — Meme Edition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Courier New', monospace; padding: 20px; }
+  #terminal { background: #0d0d0d; border-radius: 12px; overflow: hidden; width: 100%; max-width: 700px; display: flex; flex-direction: column; min-height: 460px; border: 0.5px solid #333; }
+  .term-bar { background: #1e1e1e; padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid #333; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .term-title { color: #888; font-size: 12px; margin-left: 8px; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 4px; margin-left: 6px; background: #1a3a1a; color: #4af626; border: 0.5px solid #4af626; }
+  #output { padding: 16px 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .line { font-size: 13px; line-height: 1.6; display: flex; gap: 8px; align-items: flex-start; }
+  .line.prompt { color: #4af626; } .line.output { color: #ccc; } .line.error { color: #ff6b6b; }
+  .line.success { color: #4af626; } .line.meme { color: #f0c040; font-weight: 500; } .line.comment { color: #666; }
+  .ps { color: #4af626; white-space: nowrap; } .cmd { color: #fff; }
+  .hint-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 20px 12px; }
+  .hint-btn { font-size: 11px; font-family: 'Courier New', monospace; background: #1a1a1a; color: #888; border: 0.5px solid #333; border-radius: 4px; padding: 3px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+  .hint-btn:hover { color: #4af626; border-color: #4af626; }
+  #input-row { display: flex; align-items: center; gap: 8px; padding: 10px 20px 16px; border-top: 0.5px solid #222; }
+  #input-row span { color: #4af626; font-size: 13px; white-space: nowrap; }
+  #cmd-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; font-family: 'Courier New', monospace; caret-color: #4af626; }
+</style>
+</head>
+<body>
+<div id="terminal">
+  <div class="term-bar">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="term-title">team-terminal — bash <span class="badge">meme edition</span></span>
+  </div>
+  <div id="output">
+    <div class="line comment"># Welcome to the team terminal. Type a command or click a suggestion.</div>
+    <div class="line comment"># Try: help, git blame, npm install, deploy, standup, 42</div>
+  </div>
+  <div class="hint-row">
+    <button class="hint-btn" onclick="runCmd('help')">help</button>
+    <button class="hint-btn" onclick="runCmd('git blame')">git blame</button>
+    <button class="hint-btn" onclick="runCmd('npm install')">npm install</button>
+    <button class="hint-btn" onclick="runCmd('deploy')">deploy</button>
+    <button class="hint-btn" onclick="runCmd('standup')">standup</button>
+    <button class="hint-btn" onclick="runCmd('sudo fix everything')">sudo fix everything</button>
+    <button class="hint-btn" onclick="runCmd('it works on my machine')">it works on my machine</button>
+    <button class="hint-btn" onclick="runCmd('42')">42</button>
+    <button class="hint-btn" onclick="runCmd('dark mode')">dark mode</button>
+    <button class="hint-btn" onclick="runCmd('ls')">ls</button>
+  </div>
+  <div id="input-row">
+    <span>team@prod:~$</span>
+    <input id="cmd-input" type="text" autocomplete="off" spellcheck="false" placeholder="type a command..." onkeydown="handleKey(event)" />
+  </div>
+</div>
+<script>
+const responses = {
+  help: [
+    {t:'output', s:'Available commands:'},
+    {t:'meme', s:'  git blame        → find out who broke prod (spoiler: it was you)'},
+    {t:'meme', s:'  npm install      → summon the node_modules abyss'},
+    {t:'meme', s:'  deploy           → spin the wheel of fortune'},
+    {t:'meme', s:'  standup          → generate your standup notes'},
+    {t:'meme', s:'  sudo fix everything → try it. we dare you.'},
+    {t:'meme', s:'  it works on my machine → classic'},
+    {t:'meme', s:'  ls               → see what lurks here'},
+    {t:'meme', s:'  dark mode        → toggle the vibe'},
+    {t:'meme', s:'  42               → the answer'},
+    {t:'comment', s:'  ... and maybe a few hidden ones 👀'},
+  ],
+  'git blame': [
+    {t:'output', s:'Running git blame on everything...'},
+    {t:'error', s:'Line 1-847: You'},
+    {t:'error', s:'Line 848: Also you, at 2am on a Friday'},
+    {t:'error', s:'Line 849: You again, but caffeinated'},
+    {t:'meme', s:'// TODO: blame someone else'},
+    {t:'success', s:'Conclusion: it was always you. It was always us. We are one. 🫂'},
+  ],
+  'npm install': [
+    {t:'output', s:'npm warn peer dep @types/feelings not satisfied'},
+    {t:'output', s:'npm warn deprecated sanity@1.0.0: this package no longer exists'},
+    {t:'output', s:'added 847 packages in 0.3s'},
+    {t:'output', s:'...'},
+    {t:'output', s:'added 2,341 more packages for no reason'},
+    {t:'error', s:'node_modules is now 4.7GB'},
+    {t:'meme', s:'🪣 your disk: why are you doing this to me'},
+    {t:'success', s:'✓ installed. none of this was necessary.'},
+  ],
+  deploy: [
+    {t:'output', s:'Deploying to production...'},
+    {t:'output', s:'[██░░░░░░░░] 20% — running tests'},
+    {t:'meme',   s:'[████░░░░░░] 40% — praying'},
+    {t:'output', s:'[██████░░░░] 60% — it\'s fine'},
+    {t:'error',  s:'[████████░░] 80% — it\'s not fine'},
+    {t:'meme',   s:'[██████████] 100% — shipped it anyway 🚀'},
+    {t:'success', s:'Deploy complete. Monitoring Slack for angry messages.'},
+  ],
+  standup: [
+    {t:'output', s:'Generating standup notes...'},
+    {t:'meme', s:'Yesterday: I was in a lot of meetings about the thing'},
+    {t:'meme', s:'Today: I will attend meetings about the thing'},
+    {t:'meme', s:'Blockers: the thing'},
+    {t:'success', s:'✓ Standup generated. You\'re welcome. 📋'},
+  ],
+  'sudo fix everything': [
+    {t:'output', s:'[sudo] password for engineer:'},
+    {t:'output', s:'Verifying... checking credentials...'},
+    {t:'error',   s:'sudo: fix: command not found'},
+    {t:'meme', s:'have you tried turning it off and on again? 💡'},
+  ],
+  'it works on my machine': [
+    {t:'meme', s:'      _____'},
+    {t:'meme', s:'     |     |   "works on my machine"'},
+    {t:'meme', s:'     |  ✓  |'},
+    {t:'meme', s:'     |_____|   ← certified stamp'},
+    {t:'output', s:''},
+    {t:'success', s:'Shipping your laptop to production. ETA: Tuesday.'},
+  ],
+  '42': [
+    {t:'output', s:'Computing the answer to life, the universe, and everything...'},
+    {t:'meme', s:'42'},
+    {t:'comment', s:'// took 7.5 million years, a PR, and two code reviews'},
+  ],
+  'dark mode': [
+    {t:'meme', s:'Already in dark mode.'},
+    {t:'comment', s:'// we don\'t talk about light mode here.'},
+    {t:'success', s:'Your eyes: thank you 🙏'},
+  ],
+  ls: [
+    {t:'output', s:'total 9001'},
+    {t:'meme',   s:'drwxr-xr-x  node_modules/         (do not open)'},
+    {t:'meme',   s:'-rw-r--r--  tech_debt.txt         (4.2GB)'},
+    {t:'meme',   s:'-rw-r--r--  todo_for_real.md      (never opened)'},
+    {t:'meme',   s:'-rw-r--r--  fix_later.js          (from 2019)'},
+    {t:'meme',   s:'drwxr-xr-x  meetings_about_it/    (recursive)'},
+    {t:'success', s:'-rw-r--r--  you_got_this.txt      ✓'},
+  ],
+};
+
+const hidden = {
+  'rm -rf /': [{t:'error', s:'nice try 😐'}],
+  'exit': [
+    {t:'meme', s:'you can check out any time you like...'},
+    {t:'error', s:'but you can never leave.'},
+    {t:'comment', s:'// jira still has 47 tickets assigned to you'},
+  ],
+  'git push --force': [
+    {t:'error', s:'🚨 FORCE PUSH DETECTED'},
+    {t:'error', s:'alerting: your tech lead, the CTO, future archaeologists'},
+    {t:'meme', s:'this will be discussed in the next all-hands.'},
+  ],
+  coffee: [
+    {t:'meme', s:'☕ brewing...'},
+    {t:'success', s:'ERROR: out of coffee. productivity halted. 📉'},
+  ],
+  yolo: [
+    {t:'meme', s:'YOLO mode activated 🎲'},
+    {t:'error', s:'deploying directly to prod...'},
+    {t:'meme', s:'what could go wrong'},
+    {t:'success', s:'(everything. everything could go wrong.)'},
+  ],
+};
+
+function addLine(type, text) {
+  const out = document.getElementById('output');
+  const div = document.createElement('div');
+  div.className = `line ${type}`;
+  div.textContent = text;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+function addPromptLine(cmd) {
+  const out = document.getElementById('output');
+  const div = document.createElement('div');
+  div.className = 'line prompt';
+  div.innerHTML = `<span class="ps">team@prod:~$</span> <span class="cmd">${cmd}</span>`;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+let queue = [], running = false;
+function flushQueue() {
+  if (!queue.length) { running = false; return; }
+  const item = queue.shift();
+  addLine(item.t, item.s);
+  setTimeout(flushQueue, item.t === 'error' ? 120 : 70);
+}
+function runCmd(raw) {
+  const cmd = raw.trim().toLowerCase();
+  addPromptLine(raw.trim());
+  const lines = responses[cmd] || hidden[cmd] || [{t:'error', s:`command not found: ${cmd}. try 'help'`}];
+  queue.push(...lines);
+  if (!running) { running = true; setTimeout(flushQueue, 80); }
+  document.getElementById('cmd-input').value = '';
+  document.getElementById('cmd-input').focus();
+}
+function handleKey(e) {
+  if (e.key === 'Enter') {
+    const val = document.getElementById('cmd-input').value;
+    if (val.trim()) runCmd(val);
+  }
+}
+</script>
+</body>
+</html>
